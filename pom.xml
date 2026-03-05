@@ -19,6 +19,18 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>com.aliexpress</groupId>
+        <artifactId>aliexpress-sdk</artifactId>
+        <version>1.0.0</version>
+        <scope>system</scope>
+        <systemPath>${project.basedir}/libs/gop-sdk-Java1771390807318.jar</systemPath>
+      </dependency>
+      <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>2.13.2</version>
+      </dependency>
+      <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
         <version>5.11.0</version>
