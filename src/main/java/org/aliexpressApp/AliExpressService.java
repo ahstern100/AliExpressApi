@@ -1,18 +1,18 @@
 package org.aliexpressApp;
 
-
-import com.aliexpress.open.request.AliexpressAffiliateProductSkuDetailGetRequest;
 import com.aliexpress.open.request.AliexpressAffiliateProductdetailGetRequest;
 import com.global.iop.api.IopClient;
 import com.global.iop.api.IopClientImpl;
 import com.global.iop.api.IopResponse;
+import io.github.cdimascio.dotenv.Dotenv;
 
 public class AliExpressService {
     private static final String URL = "https://api-sgaliexpress.com/sync";
-    private static final String APP_KEY = "APP_KEY";
-    private static final String APP_SECRET = "SECRET_KEY";
 
     public static void main(String[] args) {
+        Dotenv dotenv = Dotenv.load();
+        final String APP_KEY = dotenv.get("APP_KEY");
+        final String APP_SECRET = dotenv.get("SECRET_KEY");
 
         IopClient client = new IopClientImpl(URL, APP_KEY, APP_SECRET);
         AliexpressAffiliateProductdetailGetRequest req = new AliexpressAffiliateProductdetailGetRequest();
