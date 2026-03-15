@@ -41,7 +41,7 @@ public class TokenManager {
 
             long saveTimestamp = tokenData.get("save_timestamp_ms").getAsLong();
             // expire_in is in seconds, convert to milliseconds
-            long expiresInMs = tokenData.get("expire_in").getAsLong() * 1000;
+            long expiresInMs = tokenData.get("expires_in").getAsLong() * 1000;
             long expiryTime = saveTimestamp + expiresInMs;
 
             // Add a 5-minute buffer to be safe

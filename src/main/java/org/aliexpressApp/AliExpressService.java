@@ -35,7 +35,7 @@ public class AliExpressService {
         IopClient client = new IopClientImpl(API_URL, APP_KEY, APP_SECRET);
         AliexpressDsProductGetRequest req = new AliexpressDsProductGetRequest();
 
-        req.addApiParameter("product_id", "1005006041185482");
+        req.addApiParameter("product_id", "1005008799119132");
         req.addApiParameter("ship_to_country", "US");
         req.addApiParameter("language", "EN");
         req.addApiParameter("currency", "USD");
