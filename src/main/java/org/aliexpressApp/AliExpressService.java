@@ -5,65 +5,99 @@ import com.global.iop.api.IopClientImpl;
 import com.global.iop.api.IopRequest;
 import com.global.iop.api.IopResponse;
 import com.global.iop.domain.Protocol;
-
 import io.github.cdimascio.dotenv.Dotenv;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class AliExpressService {
 
     private static final String API_URL = "https://api-sg.aliexpress.com/sync/";
+    private final String appKey;
+    private final String appSecret;
+    private final IopClient client;
 
-    public static void main(String[] args) {
-        // Step 1: Load credentials from .env file
+    public AliExpressService() {
         Dotenv dotenv = Dotenv.load();
-        final String APP_KEY = dotenv.get("APP_KEY");
-        final String APP_SECRET = dotenv.get("SECRET_KEY");
+        this.appKey = dotenv.get("APP_KEY");
+        this.appSecret = dotenv.get("SECRET_KEY");
+        this.client = new IopClientImpl(API_URL, this.appKey, this.appSecret);
+    }
 
-        // Step 2: Load the access token from the saved file
+    private String loadAccessToken() {
         System.out.println("Attempting to load access token from file...");
         String accessToken = TokenManager.loadValidAccessToken();
-
-        // Step 3: Check if the token is valid. If not, guide the user.
         if (accessToken == null) {
             System.err.println("----------------------------------------------------------------------");
             System.err.println("No valid access token found.");
             System.err.println("Please run the 'AliExpressAuthService' class first to generate a new token.");
             System.err.println("----------------------------------------------------------------------");
-            return; // Halt execution
+        } else {
+            System.out.println("Access token loaded successfully.");
+        }
+        return accessToken;
+    }
+
+    private IopRequest createRequest(String apiName, List<String> params) {
+        if (params.size() % 2 != 0) {
+            throw new IllegalArgumentException("Parameters list must contain key-value pairs.");
+        }
+        IopRequest request = new IopRequest();
+        request.setApiName(apiName);
+        for (int i = 0; i < params.size(); i += 2) {
+            request.addApiParameter(params.get(i), params.get(i + 1));
+        }
+        System.out.println("API Name: " + request.getApiName());
+        return request;
+    }
+
+    public String execute(String apiName, List<String> params) throws Exception {
+        String accessToken = loadAccessToken();
+        if (accessToken == null) {
+            throw new Exception("Execution halted: No valid access token.");
         }
 
-        System.out.println("Access token loaded successfully. Fetching product details...");
-
-        // Step 4: Proceed with the API call using the valid token
-        IopClient client = new IopClientImpl(API_URL, APP_KEY, APP_SECRET);
-        IopRequest request = new IopRequest();
-        request.setApiName("aliexpress.ds.product.wholesale.get");
-        request.addApiParameter("ship_to_country", "US");
-        request.addApiParameter("product_id", "1005008144946275");
-        request.addApiParameter("target_currency", "USD");
-        request.addApiParameter("target_language", "en");
-        request.addApiParameter("remove_personal_benefit", "false");
-        System.out.println("API Name: " + request.getApiName());
+        IopRequest request = createRequest(apiName, params);
 
         try {
             IopResponse response = client.execute(request, accessToken, Protocol.TOP);
-
             if (response.isSuccess()) {
-                System.out.println("\nSuccess! Product Data:");
-                String resp = response.getGopResponseBody();
-                System.out.println(resp);
-
+                System.out.println("\nSuccess! API Response:");
+                return response.getGopResponseBody();
             } else {
-                System.err.println("\nAPI call to get product details failed!");
-                System.err.println("Error Type: " + response.getGopErrorType());
-                System.err.println("Error Code: " + response.getGopErrorCode());
-                System.err.println("Message: " + response.getGopErrorMessage());
-                System.err.println("Sub Message: " + response.getGopErrorSubMsg());
-                System.err.println("Request URL: " + response.getGopRequestUrl());
-                System.err.println("Request Parameters: " + response.getGopRequestParams());
+                String errorMessage = "API call failed! Error: " + response.getGopErrorMessage() +
+                                      " | Sub Error: " + response.getGopErrorSubMsg();
+                System.err.println(errorMessage);
+                throw new Exception(errorMessage);
             }
-            Thread.sleep(10);
         } catch (Exception e) {
-            System.err.println("\nAn exception occurred while trying to get product details.");
+            System.err.println("\nAn exception occurred during API execution.");
+            e.printStackTrace();
+            throw e;
+        }
+    }
+    
+    public String execute(String command, String params) throws Exception {
+        List<String> paramList = Arrays.asList(params.split("\s*,\s*"));
+        return execute(command, paramList);
+    }
+
+
+    public static void main(String[] args) {
+        AliExpressService aliExpressService = new AliExpressService();
+        String apiName = "aliexpress.ds.product.wholesale.get";
+        List<String> params = Arrays.asList(
+                "ship_to_country", "US",
+                "product_id", "1005008144946275",
+                "target_currency", "USD",
+                "target_language", "en",
+                "remove_personal_benefit", "false"
+        );
+
+        try {
+            String response = aliExpressService.execute(apiName, params);
+            System.out.println(response);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
