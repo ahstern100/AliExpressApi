@@ -60,6 +60,32 @@ public class AliExpressAuthService {
         return null;
     }
 
+    public static String generateNewToken(String redirectedUrl) {
+        String authCode = extractCodeFromUrl(redirectedUrl);
+        if (authCode == null) {
+            throw new IllegalArgumentException("Could not find 'code' in the provided URL.");
+        }
+
+        IopClient client = new IopClientImpl(AUTH_API_URL, System.getenv("APP_KEY"), System.getenv("SECRET_KEY"));
+        IopRequest request = new IopRequest();
+        request.setApiName("/auth/token/create");
+        request.addApiParameter("code", authCode);
+
+        try {
+            IopResponse response = client.execute(request);
+            if (response.isSuccess()) {
+                String responseBody = response.getGopResponseBody();
+                JsonObject tokenJson = JsonParser.parseString(responseBody).getAsJsonObject();
+                TokenManager.saveToken(tokenJson);
+                return "Token generated and saved successfully!";
+            } else {
+                throw new RuntimeException("Failed to get access token: " + response.getGopErrorMessage());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error during token generation: " + e.getMessage(), e);
+        }
+    }
+
     public static void main(String[] args) {
         Dotenv dotenv = Dotenv.load();
         final String APP_KEY = dotenv.get("APP_KEY");
@@ -78,37 +104,7 @@ public class AliExpressAuthService {
         String redirectUrl = scanner.nextLine();
 
         // 3. Extract the code
-        String authCode = extractCodeFromUrl(redirectUrl);
-        if (authCode == null) {
-            System.err.println("Could not find 'code' in the provided URL. Please try again.");
-            return;
-        }
-        System.out.println("Successfully extracted authorization code: " + authCode);
-
-        // 4. Exchange the code for an access token
-        System.out.println("\nSTEP 3: Exchanging code for access token...");
-        IopClient client = new IopClientImpl(AUTH_API_URL, APP_KEY, APP_SECRET);
-        IopRequest request = new IopRequest();
-        request.setApiName("/auth/token/create");
-        request.addApiParameter("code", authCode);
-
-        try {
-            IopResponse response = client.execute(request);
-
-            if (response.isSuccess()) {
-                String responseBody = response.getGopResponseBody();
-                System.out.println("API Response: " + responseBody);
-
-                // 5. Save the token details to a file
-                JsonObject tokenJson = JsonParser.parseString(responseBody).getAsJsonObject();
-                TokenManager.saveToken(tokenJson);
-
-            } else {
-                System.err.println("Failed to get access token!");
-                System.err.println("Error: " + response.getGopErrorMessage());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        generateNewToken(redirectUrl);
+        
     }
 }

@@ -16,11 +16,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 public class MainApp extends Application {
 
     private final AliExpressAuthService authService = new AliExpressAuthService();
     private final AliExpressService aliExpressService = new AliExpressService();
     private final ApiCommandRepository apiCommandRepository = new ApiCommandRepository();
+    private String appKey;
+
 
     // To hold the dynamically created text fields for parameters
     private final Map<String, TextField> parameterTextFields = new HashMap<>();
@@ -31,6 +35,9 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        Dotenv dotenv = Dotenv.load();
+        this.appKey = dotenv.get("APP_KEY");
+
         primaryStage.setTitle("AliExpress API Client");
 
         TabPane tabPane = new TabPane();
@@ -59,7 +66,7 @@ public class MainApp extends Application {
         GridPane.setConstraints(authUrlLabel, 0, 0);
         TextField authUrlText = new TextField();
         authUrlText.setEditable(false);
-        authUrlText.setText(authService.getAuthorizationUrl());
+        authUrlText.setText(AliExpressAuthService.generateAuthorizationUrl(appKey));
         GridPane.setConstraints(authUrlText, 1, 0);
 
         Label redirectedUrlLabel = new Label("Redirected URL:");
@@ -72,7 +79,7 @@ public class MainApp extends Application {
         generateTokenButton.setOnAction(e -> {
             String redirectedUrl = redirectedUrlText.getText();
             try {
-                authService.generateNewToken(redirectedUrl);
+                AliExpressAuthService.generateNewToken(redirectedUrl);
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Token generated successfully!");
             } catch (Exception ex) {
                 showAlert(Alert.AlertType.ERROR, "Error", "Failed to generate token: " + ex.getMessage());
